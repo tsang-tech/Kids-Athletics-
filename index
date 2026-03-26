@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>兒童競技管理系統 - CKT Athletics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @media print {
+            .no-print { display: none; }
+            .print-only { display: block; }
+            body { padding: 0; background: white; }
+            .card { border: none; box-shadow: none; }
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden card">
+        <div class="bg-blue-600 p-6 text-white no-print">
+            <h1 class="text-2xl font-bold">CKT 兒童競技排陣管理系統</h1>
+            <div class="mt-4 flex space-x-4">
+                <button onclick="showTab('lineup')" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded">排陣管理</button>
+                <button onclick="showTab('students')" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded">學生名單編輯</button>
+                <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">匯出 Excel</button>
+                <button onclick="window.print()" class="bg-gray-700 hover:bg-gray-800 px-4 py-2 rounded">列印報名表</button>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <div id="lineup" class="tab-content active">
+                <div class="mb-6 flex items-center space-x-4 no-print">
+                    <label class="font-bold">選擇隊伍：</label>
+                    <select id="teamSelect" onchange="renderLineup()" class="border p-2 rounded w-64">
+                        <option value="CKT2017A">CKT2017A</option>
+                        <option value="CKT2017B">CKT2017B</option>
+                        <option value="CKT2018A">CKT2018A</option>
+                        <option value="CKT2018B">CKT2018B</option>
+                        <option value="CKT2018C">CKT2018C</option>
+                        <option value="CKT2018D">CKT2018D</option>
+                        <option value="CKT2019A">CKT2019A</option>
+                    </select>
+                </div>
+
+                <h2 class="text-xl font-bold mb-4 text-center border-b pb-2">隊伍排陣表：<span id="displayTeamName">CKT2017A</span></h2>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse border border-gray-300" id="lineupTable">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th class="border border-gray-300 p-2 w-1/4">比賽項目</th>
+                                <th class="border border-gray-300 p-2">名額 1</th>
+                                <th class="border border-gray-300 p-2">名額 2</th>
+                                <th class="border border-gray-300 p-2">名額 3</th>
+                                <th class="border border-gray-300 p-2">名額 4</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eventRows">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="students" class="tab-content">
+                <h2 class="text-xl font-bold mb-4">學生名單管理 (2017-2026)</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded">
+                    <input type="text" id="newName" placeholder="學生姓名" class="border p-2 rounded">
+                    <select id="newYear" class="border p-2 rounded"></select>
+                    <select id="newTeam" class="border p-2 rounded">
+                        <option value="CKT2017A">CKT2017A</option>
+                        <option value="CKT2017B">CKT2017B</option>
+                        <option value="CKT2018A">CKT2018A</option>
+                        <option value="CKT2018B">CKT2018B</option>
+                        <option value="CKT2018C">CKT2018C</option>
+                        <option value="CKT2018D">CKT2018D</option>
+                        <option value="CKT2019A">CKT2019A</option>
+                    </select>
+                    <button onclick="addStudent()" class="bg-blue-600 text-white p-2 rounded">新增學生</button>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block font-bold mb-2">Excel 匯入：</label>
+                    <input type="file" onchange="importExcel(event)" class="border p-1">
+                </div>
+
+                <div class="overflow-y-auto max-h-96">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-left">
+                                <th class="p-2 border">姓名</th>
+                                <th class="p-2 border">出生年份</th>
+                                <th class="p-2 border">隊伍</th>
+                                <th class="p-2 border">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化數據
+        const events = ["原地擲膠圈", "速度跨欄", "前拋藥球", "十字跳", "來回節奏跑", "立定跳遠", "擲標槍", "A 級方程式"];
+        let students = JSON.parse(localStorage.getItem('cktStudents')) || [
+            { name: "陳希諾", year: 2019, team: "CKT2019A" }, { name: "陳逸朗", year: 2019, team: "CKT2019A" },
+            { name: "林嘉盛", year: 2019, team: "CKT2019A" }, { name: "陳梓瑩", year: 2019, team: "CKT2019A" },
+            { name: "徐梓添", year: 2019, team: "CKT2019A" }, { name: "邱俊傑", year: 2019, team: "CKT2019A" },
+            { name: "謝瀚陞", year: 2018, team: "CKT2018A" }, { name: "鄔嘉樂", year: 2018, team: "CKT2018A" },
+            { name: "胡仲希", year: 2018, team: "CKT2018A" }, { name: "梁喬珀", year: 2018, team: "CKT2018A" },
+            { name: "伍梓灝", year: 2018, team: "CKT2018A" }, { name: "李天仁", year: 2018, team: "CKT2018B" },
+            { name: "雪壬愷", year: 2018, team: "CKT2018B" }, { name: "鄧雅殷", year: 2018, team: "CKT2018B" },
+            { name: "鄧善殷", year: 2018, team: "CKT2018B" }, { name: "杜濼麒", year: 2018, team: "CKT2018B" },
+            { name: "童文涵", year: 2018, team: "CKT2018C" }, { name: "陳希兒", year: 2018, team: "CKT2018C" },
+            { name: "黄洛鋋", year: 2018, team: "CKT2018C" }, { name: "李晉兒", year: 2018, team: "CKT2018C" },
+            { name: "周暟淳", year: 2018, team: "CKT2018C" }, { name: "林靖柔", year: 2018, team: "CKT2018D" },
+            { name: "李心妤", year: 2018, team: "CKT2018D" }, { name: "李宇軒", year: 2018, team: "CKT2018D" },
+            { name: "李泓亮", year: 2018, team: "CKT2018D" }, { name: "邱曼露", year: 2018, team: "CKT2018D" },
+            { name: "余焌達", year: 2017, team: "CKT2017A" }, { name: "鄧萃藍", year: 2017, team: "CKT2017A" },
+            { name: "郭俊希", year: 2017, team: "CKT2017A" }, { name: "羅啟鋒", year: 2017, team: "CKT2017A" },
+            { name: "彭子恪", year: 2017, team: "CKT2017A" }, { name: "江柏昊", year: 2017, team: "CKT2017A" },
+            { name: "劉栢熹", year: 2017, team: "CKT2017B" }, { name: "陳希姸", year: 2017, team: "CKT2017B" },
+            { name: "麥風", year: 2017, team: "CKT2017B" }, { name: "梁匡毅", year: 2017, team: "CKT2017B" },
+            { name: "盧鍵霆", year: 2017, team: "CKT2017B" }, { name: "徐梓程", year: 2017, team: "CKT2017B" }
+        ];
+
+        let lineups = JSON.parse(localStorage.getItem('cktLineups')) || {};
+
+        // 初始化年份選擇器 (2017-2026)
+        const yearSelect = document.getElementById('newYear');
+        for (let y = 2017; y <= 2026; y++) {
+            yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+        }
+
+        // 頁籤切換
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // 渲染排陣表格
+        function renderLineup() {
+            const team = document.getElementById('teamSelect').value;
+            document.getElementById('displayTeamName').innerText = team;
+            const teamStudents = students.filter(s => s.team === team);
+            const tbody = document.getElementById('eventRows');
+            tbody.innerHTML = '';
+
+            events.forEach(event => {
+                let row = `<tr><td class="border p-2 font-medium bg-gray-50">${event}</td>`;
+                for (let i = 0; i < 4; i++) {
+                    const savedValue = lineups[team]?.[event]?.[i] || "";
+                    let options = `<option value="">-- 請選擇 --</option>`;
+                    teamStudents.forEach(s => {
+                        options += `<option value="${s.name}" ${savedValue === s.name ? 'selected' : ''}>${s.name}</option>`;
+                    });
+                    row += `<td class="border p-1">
+                        <select onchange="saveLineup('${team}', '${event}', ${i}, this.value)" class="w-full p-1 border-none bg-transparent focus:ring-0">
+                            ${options}
+                        </select>
+                    </td>`;
+                }
+                row += `</tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // 儲存排陣
+        function saveLineup(team, event, index, value) {
+            if (!lineups[team]) lineups[team] = {};
+            if (!lineups[team][event]) lineups[team][event] = ["", "", "", ""];
+            lineups[team][event][index] = value;
+            localStorage.setItem('cktLineups', JSON.stringify(lineups));
+        }
+
+        // 學生管理
+        function renderStudents() {
+            const tbody = document.getElementById('studentTableBody');
+            tbody.innerHTML = '';
+            students.sort((a,b) => a.team.localeCompare(b.team)).forEach((s, idx) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-2 border">${s.name}</td>
+                        <td class="p-2 border">${s.year}</td>
+                        <td class="p-2 border">${s.team}</td>
+                        <td class="p-2 border"><button onclick="deleteStudent(${idx})" class="text-red-500">刪除</button></td>
+                    </tr>`;
+            });
+            localStorage.setItem('cktStudents', JSON.stringify(students));
+            renderLineup();
+        }
+
+        function addStudent() {
+            const name = document.getElementById('newName').value;
+            const year = document.getElementById('newYear').value;
+            const team = document.getElementById('newTeam').value;
+            if (!name) return alert("請輸入姓名");
+            students.push({ name, year: parseInt(year), team });
+            document.getElementById('newName').value = '';
+            renderStudents();
+        }
+
+        function deleteStudent(idx) {
+            if (confirm("確定刪除？")) {
+                students.splice(idx, 1);
+                renderStudents();
+            }
+        }
+
+        // Excel 匯出
+        function exportToExcel() {
+            const team = document.getElementById('teamSelect').value;
+            const table = document.getElementById('lineupTable');
+            const wb = XLSX.utils.table_to_book(table, { sheet: team });
+            XLSX.writeFile(wb, `${team}_排陣表.xlsx`);
+        }
+
+        // Excel 匯入學生名單
+        function importExcel(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                
+                // 假設 Excel 欄位為: 姓名, 年份, 隊伍
+                if (confirm("這將覆蓋或增加現有名單，確定嗎？")) {
+                    jsonData.forEach(row => {
+                        students.push({
+                            name: row["姓名"] || row["name"],
+                            year: parseInt(row["年份"] || row["year"]),
+                            team: row["隊伍"] || row["team"]
+                        });
+                    });
+                    renderStudents();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 初始運行
+        renderStudents();
+    </script>
+</body>
+</html>
