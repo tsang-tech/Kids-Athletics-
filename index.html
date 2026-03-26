@@ -3,51 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CKT 田徑選拔與排陣系統 V3.0</title>
+    <title>CKT 田徑管理系統 V4.0 - 完整名單版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #60a5fa;
-            --secondary: #34d399;
-            --accent: #fbbf24;
-            --bg: #f8fafc;
-        }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #f8fafc; color: #334155; }
         .kid-font { font-family: 'ZCOOL+KuaiLe', cursive; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        
-        /* 卡片懸浮效果 */
-        .hover-card:hover { transform: translateY(-2px); transition: all 0.2s; }
-        
-        @media print {
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            .page-break { page-break-after: always; }
-        }
-
-        /* 優化無滾動條佈局 */
-        .lineup-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
+        .nav-btn { transition: all 0.2s; border-radius: 12px; font-weight: 700; padding: 8px 16px; }
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
-<body class="text-slate-700">
+<body>
 
     <nav class="bg-white shadow-sm sticky top-0 z-50 no-print border-b border-sky-100">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
-            <h1 class="text-2xl font-bold text-sky-500 kid-font flex items-center">
-                <span class="text-3xl mr-2">🎈</span> CKT 管理系統 V3
-            </h1>
-            <div class="flex space-x-1 overflow-x-auto">
-                <button onclick="showTab('trial')" class="nav-btn bg-sky-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md">選拔成績</button>
-                <button onclick="showTab('leaderboard')" class="nav-btn bg-emerald-400 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md">龍虎榜</button>
-                <button onclick="showTab('lineup')" class="nav-btn bg-amber-400 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md">正式排陣</button>
-                <button onclick="showTab('settings')" class="nav-btn bg-indigo-400 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md">設定</button>
+            <h1 class="text-xl font-bold text-sky-500 kid-font flex items-center">🏃‍♂️ CKT 田徑系統 V4</h1>
+            <div class="flex gap-1 overflow-x-auto">
+                <button onclick="showTab('trial')" class="nav-btn bg-sky-500 text-white">成績錄入</button>
+                <button onclick="showTab('leaderboard')" class="nav-btn bg-emerald-500 text-white">隊伍龍虎榜</button>
+                <button onclick="showTab('lineup')" class="nav-btn bg-amber-500 text-white">項目排陣</button>
+                <button onclick="showTab('settings')" class="nav-btn bg-slate-600 text-white">學生管理</button>
             </div>
         </div>
     </nav>
@@ -55,84 +33,62 @@
     <main class="max-w-7xl mx-auto p-4 md:p-6">
 
         <div id="trial" class="tab-content active">
-            <div class="bg-white rounded-3xl shadow-xl p-6 border-4 border-sky-50">
-                <div class="flex flex-col md:flex-row justify-between mb-6 gap-4">
-                    <h2 class="text-xl font-bold text-sky-600 flex items-center"><span class="mr-2">⏱️</span> 成績錄入 (選拔專用)</h2>
-                    <div class="flex gap-2">
-                        <select id="filterYearTrial" onchange="renderTrialEditor()" class="bg-sky-50 border-none rounded-lg px-3 py-1 text-sm outline-none ring-1 ring-sky-200">
-                            </select>
-                    </div>
+            <div class="bg-white rounded-3xl shadow-sm p-6 border border-sky-100">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-sky-600">⏱️ 選拔成績錄入</h2>
+                    <select id="filterTeamTrial" onchange="renderTrialEditor()" class="rounded-lg border-sky-200 text-sm"></select>
                 </div>
-                
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-sky-100 text-sky-700">
-                            <tr>
-                                <th class="p-3 rounded-l-xl">姓名</th>
-                                <th class="p-3">隊伍</th>
-                                <th class="p-3 w-48">項目</th>
-                                <th class="p-3">成績</th>
-                                <th class="p-3 rounded-r-xl">更新時間</th>
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-sky-50 text-sky-700">
+                                <th class="p-3">姓名</th>
+                                <th class="p-3">項目</th>
+                                <th class="p-3">成績 (秒/米/分)</th>
+                                <th class="p-3">記錄時間</th>
                             </tr>
                         </thead>
-                        <tbody id="trialRows" class="divide-y divide-slate-100">
-                            </tbody>
+                        <tbody id="trialRows" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
         <div id="leaderboard" class="tab-content">
-            <div class="mb-6 flex items-center justify-between">
-                <h2 class="text-2xl font-bold text-emerald-600 kid-font">🏆 項目龍虎榜</h2>
-                <select id="leaderGroupYear" onchange="renderLeaderboard()" class="bg-emerald-50 border-none rounded-xl px-4 py-2 font-bold text-emerald-700 ring-2 ring-emerald-200">
-                </select>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-emerald-600 kid-font">🏆 隊伍排名榜</h2>
+                <select id="leaderTeamSelect" onchange="renderLeaderboard()" class="bg-emerald-50 border-emerald-200 rounded-xl px-4 py-2 font-bold text-emerald-700 ring-2 ring-emerald-100"></select>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="leaderGrid">
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="leaderGrid"></div>
         </div>
 
         <div id="lineup" class="tab-content">
-            <div class="bg-white rounded-3xl shadow-xl p-6 border-4 border-amber-50">
+            <div class="bg-white rounded-3xl shadow-sm p-6 border border-amber-100">
                 <div class="flex justify-between items-center mb-6">
-                    <div class="flex items-center space-x-3">
-                        <span class="font-bold text-amber-600">隊伍：</span>
-                        <select id="teamSelect" onchange="renderLineup()" class="bg-amber-50 border-none rounded-xl px-4 py-2 font-bold text-amber-700 ring-2 ring-amber-200 outline-none"></select>
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold">排陣隊伍：</span>
+                        <select id="teamSelect" onchange="renderLineup()" class="rounded-xl border-amber-200 font-bold text-amber-700"></select>
                     </div>
-                    <button onclick="window.print()" class="no-print bg-slate-700 text-white px-4 py-2 rounded-xl text-sm">列印排陣表</button>
+                    <button onclick="window.print()" class="no-print bg-slate-800 text-white px-4 py-2 rounded-lg text-sm">列印排陣</button>
                 </div>
-
-                <div id="lineupContainer" class="lineup-grid">
-                    </div>
+                <div id="lineupContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
             </div>
         </div>
 
         <div id="settings" class="tab-content">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="bg-white rounded-3xl shadow-lg p-6 border-2 border-indigo-50">
-                    <h3 class="font-bold text-indigo-600 mb-4">隊伍與名單管理</h3>
-                    <div class="flex space-x-2 mb-6">
-                        <input type="text" id="newTeamInput" placeholder="新隊伍名稱" class="flex-grow bg-slate-50 rounded-xl px-4 py-2 outline-none border-2 border-transparent focus:border-indigo-200">
-                        <button onclick="addTeam()" class="bg-indigo-500 text-white px-6 py-2 rounded-xl hover:bg-indigo-600 transition">新增</button>
-                    </div>
-                    <div id="teamList" class="flex flex-wrap gap-2 mb-6"></div>
-                    
-                    <hr class="mb-6">
-                    
-                    <div class="space-y-3">
-                        <input type="text" id="stdName" placeholder="學生姓名" class="w-full bg-slate-50 rounded-xl px-4 py-2 outline-none">
-                        <div class="grid grid-cols-2 gap-2">
-                            <select id="stdYear" class="bg-slate-50 rounded-xl px-4 py-2 outline-none"></select>
-                            <select id="stdTeam" class="bg-slate-50 rounded-xl px-4 py-2 outline-none"></select>
-                        </div>
-                        <button onclick="addStudent()" class="w-full bg-sky-400 text-white rounded-xl py-3 font-bold hover:bg-sky-500">添加學生</button>
-                    </div>
+            <div class="bg-white rounded-3xl shadow-sm p-6 border">
+                <h3 class="font-bold mb-4">學生名單總表 (共 <span id="studentCount">0</span> 人)</h3>
+                <div class="flex gap-2 mb-4 no-print">
+                    <input type="text" id="newSName" placeholder="姓名" class="border rounded px-2 py-1 w-24">
+                    <select id="newSYear" class="border rounded"></select>
+                    <select id="newSTeam" class="border rounded"></select>
+                    <button onclick="addStudentManual()" class="bg-sky-500 text-white px-4 py-1 rounded">新增</button>
+                    <button onclick="resetToDefault()" class="bg-red-100 text-red-600 px-4 py-1 rounded ml-auto">重置預設名單</button>
                 </div>
-
-                <div class="bg-white rounded-3xl shadow-lg p-6 overflow-y-auto max-h-[500px]">
+                <div class="overflow-y-auto max-h-[600px]">
                     <table class="w-full text-sm">
-                        <thead class="sticky top-0 bg-white shadow-sm">
-                            <tr class="text-slate-400"><th class="p-2 text-left">姓名</th><th class="p-2 text-left">年份</th><th class="p-2 text-left">隊伍</th><th class="p-2">操作</th></tr>
+                        <thead class="bg-slate-50 sticky top-0">
+                            <tr><th class="p-2 text-left">姓名</th><th class="p-2 text-left">隊伍</th><th class="p-2 text-left">年份</th><th class="p-2">操作</th></tr>
                         </thead>
                         <tbody id="masterStudentTable" class="divide-y"></tbody>
                     </table>
@@ -143,20 +99,37 @@
     </main>
 
     <script>
-        // --- 初始化基礎數據 ---
         const EVENTS = ["原地擲膠圈", "速度跨欄", "前拋藥球", "十字跳", "來回節奏跑", "立定跳遠", "擲標槍", "A 級方程式"];
         
-        let teams = JSON.parse(localStorage.getItem('ckt_teams_v3')) || ["CKT2017A", "CKT2017B", "CKT2018A", "CKT2018B", "CKT2018C", "CKT2018D", "CKT2019A"];
-        let students = JSON.parse(localStorage.getItem('ckt_students_v3')) || [
-            { name: "陳希諾", year: 2019, team: "CKT2019A" }, { name: "陳逸朗", year: 2019, team: "CKT2019A" },
-            { name: "謝瀚陞", year: 2018, team: "CKT2018A" }, { name: "李天仁", year: 2018, team: "CKT2018B" },
-            { name: "童文涵", year: 2018, team: "CKT2018C" }, { name: "林靖柔", year: 2018, team: "CKT2018D" },
-            { name: "余焌達", year: 2017, team: "CKT2017A" }, { name: "劉栢熹", year: 2017, team: "CKT2017B" }
+        // --- 核心學生數據 (完整名單) ---
+        const DEFAULT_STUDENTS = [
+            // 2019
+            {name: "陳希諾", year: 2019, team: "CKT2019A"}, {name: "陳逸朗", year: 2019, team: "CKT2019A"}, {name: "林嘉盛", year: 2019, team: "CKT2019A"},
+            {name: "陳梓瑩", year: 2019, team: "CKT2019A"}, {name: "徐梓添", year: 2019, team: "CKT2019A"}, {name: "邱俊傑", year: 2019, team: "CKT2019A"},
+            // 2018 A
+            {name: "謝瀚陞", year: 2018, team: "CKT2018A"}, {name: "鄔嘉樂", year: 2018, team: "CKT2018A"}, {name: "胡仲希", year: 2018, team: "CKT2018A"},
+            {name: "梁喬珀", year: 2018, team: "CKT2018A"}, {name: "伍梓灝", year: 2018, team: "CKT2018A"},
+            // 2018 B
+            {name: "李天仁", year: 2018, team: "CKT2018B"}, {name: "雪壬愷", year: 2018, team: "CKT2018B"}, {name: "鄧雅殷", year: 2018, team: "CKT2018B"},
+            {name: "鄧善殷", year: 2018, team: "CKT2018B"}, {name: "杜濼麒", year: 2018, team: "CKT2018B"},
+            // 2018 C
+            {name: "童文涵", year: 2018, team: "CKT2018C"}, {name: "陳希兒", year: 2018, team: "CKT2018C"}, {name: "黄洛鋋", year: 2018, team: "CKT2018C"},
+            {name: "李晉兒", year: 2018, team: "CKT2018C"}, {name: "周暟淳", year: 2018, team: "CKT2018C"},
+            // 2018 D
+            {name: "林靖柔", year: 2018, team: "CKT2018D"}, {name: "李心妤", year: 2018, team: "CKT2018D"}, {name: "李宇軒", year: 2018, team: "CKT2018D"},
+            {name: "李泓亮", year: 2018, team: "CKT2018D"}, {name: "邱曼露", year: 2018, team: "CKT2018D"},
+            // 2017 A
+            {name: "余焌達", year: 2017, team: "CKT2017A"}, {name: "鄧萃藍", year: 2017, team: "CKT2017A"}, {name: "郭俊希", year: 2017, team: "CKT2017A"},
+            {name: "羅啟鋒", year: 2017, team: "CKT2017A"}, {name: "彭子恪", year: 2017, team: "CKT2017A"}, {name: "江柏昊", year: 2017, team: "CKT2017A"},
+            // 2017 B
+            {name: "劉栢熹", year: 2017, team: "CKT2017B"}, {name: "陳希姸", year: 2017, team: "CKT2017B"}, {name: "麥風", year: 2017, team: "CKT2017B"},
+            {name: "梁匡毅", year: 2017, team: "CKT2017B"}, {name: "盧鍵霆", year: 2017, team: "CKT2017B"}, {name: "徐梓程", year: 2017, team: "CKT2017B"}
         ];
-        let trialResults = JSON.parse(localStorage.getItem('ckt_trial_v3')) || []; // [{name, year, event, score, ts}]
-        let lineups = JSON.parse(localStorage.getItem('ckt_lineups_v3')) || {};
 
-        // --- 功能模組 ---
+        let students = JSON.parse(localStorage.getItem('ckt_students_v4')) || DEFAULT_STUDENTS;
+        let teams = JSON.parse(localStorage.getItem('ckt_teams_v4')) || ["CKT2017A", "CKT2017B", "CKT2018A", "CKT2018B", "CKT2018C", "CKT2018D", "CKT2019A"];
+        let trialResults = JSON.parse(localStorage.getItem('ckt_trial_v4')) || [];
+        let lineups = JSON.parse(localStorage.getItem('ckt_lineups_v4')) || {};
 
         function showTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -164,104 +137,73 @@
             if(tabId === 'trial') renderTrialEditor();
             if(tabId === 'leaderboard') renderLeaderboard();
             if(tabId === 'lineup') renderLineup();
+            if(tabId === 'settings') renderStudentSettings();
         }
 
-        // 1. 選拔成績錄入邏輯 (第一頁)
+        // --- 1. 成績錄入 ---
         function renderTrialEditor() {
-            const filterYear = document.getElementById('filterYearTrial').value;
+            const team = document.getElementById('filterTeamTrial').value;
             const container = document.getElementById('trialRows');
             container.innerHTML = '';
+            const filtered = students.filter(s => s.team === team);
 
-            const filteredStudents = students.filter(s => s.year == filterYear);
-            
-            filteredStudents.forEach(s => {
-                EVENTS.forEach((event, eIdx) => {
+            filtered.forEach(s => {
+                EVENTS.forEach((event, idx) => {
                     const record = trialResults.find(r => r.name === s.name && r.event === event) || {score: ''};
-                    const row = document.createElement('tr');
-                    row.className = "hover:bg-sky-50 transition";
-                    row.innerHTML = `
-                        <td class="p-3 font-bold">${eIdx === 0 ? s.name : ''}</td>
-                        <td class="p-3 text-slate-400 text-xs">${eIdx === 0 ? s.team : ''}</td>
-                        <td class="p-3 font-medium text-sky-600">${event}</td>
-                        <td class="p-3">
-                            <input type="number" step="0.01" value="${record.score}" 
-                                onchange="saveTrialScore('${s.name}', ${s.year}, '${event}', this.value)"
-                                class="w-24 bg-white border-2 border-sky-100 rounded-lg px-2 py-1 outline-none focus:border-sky-400">
-                        </td>
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="p-3 font-bold">${idx === 0 ? s.name : ''}</td>
+                        <td class="p-3 text-sky-600 font-medium">${event}</td>
+                        <td class="p-3"><input type="number" step="0.01" value="${record.score}" onchange="saveScore('${s.name}', '${event}', this.value)" class="w-24 border-b-2 border-sky-100 outline-none focus:border-sky-500 px-1"></td>
                         <td class="p-3 text-[10px] text-slate-300">${record.ts || '-'}</td>
                     `;
-                    container.appendChild(row);
+                    container.appendChild(tr);
                 });
-                // 學生分割線
-                const spacer = document.createElement('tr');
-                spacer.innerHTML = `<td colspan="5" class="bg-slate-50 h-1"></td>`;
-                container.appendChild(spacer);
+                container.innerHTML += `<tr class="bg-slate-50"><td colspan="4" class="h-1"></td></tr>`;
             });
         }
 
-        function saveTrialScore(name, year, event, score) {
-            const ts = new Date().toLocaleString();
+        function saveScore(name, event, score) {
             const idx = trialResults.findIndex(r => r.name === name && r.event === event);
-            if (idx > -1) {
-                trialResults[idx].score = parseFloat(score);
-                trialResults[idx].ts = ts;
-            } else {
-                trialResults.push({ name, year, event, score: parseFloat(score), ts });
-            }
-            localStorage.setItem('ckt_trial_v3', JSON.stringify(trialResults));
+            const ts = new Date().toLocaleString();
+            if(idx > -1) { trialResults[idx].score = parseFloat(score); trialResults[idx].ts = ts; }
+            else { trialResults.push({name, event, score: parseFloat(score), ts}); }
+            localStorage.setItem('ckt_trial_v4', JSON.stringify(trialResults));
         }
 
-        // 2. 龍虎榜邏輯 (分組 + 前6名 + 不重複)
+        // --- 2. 龍虎榜 (按隊伍) ---
         function renderLeaderboard() {
-            const groupYear = document.getElementById('leaderGroupYear').value;
+            const team = document.getElementById('leaderTeamSelect').value;
             const container = document.getElementById('leaderGrid');
             container.innerHTML = '';
 
             EVENTS.forEach(event => {
-                // 獲取該年份、該項目的所有成績
-                let allScores = trialResults.filter(r => r.year == groupYear && r.event === event && r.score > 0);
+                // 獲取該隊伍、該項目的成績
+                let teamScores = trialResults.filter(r => {
+                    const std = students.find(s => s.name === r.name);
+                    return std && std.team === team && r.event === event && r.score > 0;
+                }).sort((a,b) => b.score - a.score).slice(0, 6);
+
+                let html = `<div class="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden">
+                    <div class="bg-emerald-500 p-2 text-white font-bold text-center text-sm">${event}</div>
+                    <div class="p-3 space-y-1">`;
                 
-                // 確保人名不重複（只取最高分）
-                let bestScoresMap = new Map();
-                allScores.forEach(item => {
-                    if(!bestScoresMap.has(item.name) || item.score > bestScoresMap.get(item.name).score) {
-                        bestScoresMap.set(item.name, item);
-                    }
-                });
-
-                // 排序並取前 6
-                let top6 = Array.from(bestScoresMap.values())
-                    .sort((a, b) => b.score - a.score)
-                    .slice(0, 6);
-
-                let cardHTML = `
-                    <div class="bg-white rounded-3xl shadow-sm border-2 border-emerald-100 overflow-hidden hover-card">
-                        <div class="bg-emerald-500 p-3 text-white font-bold text-center kid-font tracking-wider">${event}</div>
-                        <div class="p-4 space-y-2">
-                `;
-
-                if (top6.length === 0) {
-                    cardHTML += `<div class="text-slate-300 text-center py-4 text-sm italic">尚無選拔數據</div>`;
-                } else {
-                    top6.forEach((r, i) => {
-                        const rankColors = ['text-amber-500 font-bold', 'text-slate-400 font-bold', 'text-orange-400 font-bold', 'text-slate-500', 'text-slate-500', 'text-slate-500'];
-                        cardHTML += `
-                            <div class="flex justify-between items-center text-sm p-1 border-b border-emerald-50">
-                                <span class="${rankColors[i]} w-6">${i+1}.</span>
-                                <span class="flex-grow font-medium">${r.name}</span>
-                                <span class="text-xs text-slate-400 mr-2">${students.find(s=>s.name===r.name)?.team || ''}</span>
-                                <span class="font-mono font-bold text-emerald-600">${r.score}</span>
-                            </div>
-                        `;
+                if(teamScores.length === 0) html += `<div class="text-slate-300 text-center text-xs py-4">無成績</div>`;
+                else {
+                    teamScores.forEach((r, i) => {
+                        html += `<div class="flex justify-between text-sm border-b border-emerald-50 py-1">
+                            <span class="text-emerald-700 w-4">${i+1}.</span>
+                            <span class="flex-grow">${r.name}</span>
+                            <span class="font-mono font-bold">${r.score}</span>
+                        </div>`;
                     });
                 }
-
-                cardHTML += `</div></div>`;
-                container.innerHTML += cardHTML;
+                html += `</div></div>`;
+                container.innerHTML += html;
             });
         }
 
-        // 3. 排陣表邏輯 (卡片網格佈局，固定顯示全名)
+        // --- 3. 排陣 ---
         function renderLineup() {
             const team = document.getElementById('teamSelect').value;
             const teamStudents = students.filter(s => s.team === team);
@@ -270,127 +212,72 @@
 
             EVENTS.forEach(event => {
                 const selections = lineups[team]?.[event] || ["", "", "", ""];
-                
                 const card = document.createElement('div');
-                card.className = "bg-white border-2 border-amber-100 rounded-2xl p-4 shadow-sm";
-                card.innerHTML = `<h3 class="font-bold text-amber-600 mb-3 flex items-center"><span class="mr-2 text-lg">🏁</span>${event}</h3>`;
+                card.className = "bg-white border border-amber-200 rounded-2xl p-4";
+                card.innerHTML = `<h3 class="font-bold text-amber-600 mb-3 border-b border-amber-50 pb-1 text-sm">${event}</h3>`;
                 
-                const slotsDiv = document.createElement('div');
-                slotsDiv.className = "space-y-2";
-
-                for (let i = 0; i < 4; i++) {
-                    const select = document.createElement('select');
-                    select.className = "w-full p-2 bg-amber-50 rounded-xl border-none text-sm font-medium outline-none ring-1 ring-amber-100 focus:ring-amber-400";
-                    
-                    let optionsHTML = `<option value="">名額 ${i+1}</option>`;
+                for(let i=0; i<4; i++) {
+                    const sel = document.createElement('select');
+                    sel.className = "w-full mb-2 p-2 bg-amber-50 rounded-lg text-xs outline-none focus:ring-1 focus:ring-amber-400";
+                    let opts = `<option value="">名額 ${i+1}</option>`;
                     teamStudents.forEach(s => {
-                        // 防重複邏輯
-                        const isSelectedElsewhere = selections.some((name, idx) => name === s.name && idx !== i);
-                        const selectedAttr = selections[i] === s.name ? 'selected' : '';
-                        const disabledAttr = isSelectedElsewhere ? 'disabled class="text-slate-300"' : '';
-                        optionsHTML += `<option value="${s.name}" ${selectedAttr} ${disabledAttr}>${s.name}</option>`;
+                        const isOther = selections.some((name, idx) => name === s.name && idx !== i);
+                        opts += `<option value="${s.name}" ${selections[i]===s.name?'selected':''} ${isOther?'disabled':''}>${s.name}</option>`;
                     });
-                    
-                    select.innerHTML = optionsHTML;
-                    select.onchange = (e) => {
-                        if (!lineups[team]) lineups[team] = {};
-                        if (!lineups[team][event]) lineups[team][event] = ["", "", "", ""];
+                    sel.innerHTML = opts;
+                    sel.onchange = (e) => {
+                        if(!lineups[team]) lineups[team] = {};
+                        if(!lineups[team][event]) lineups[team][event] = ["","","",""];
                         lineups[team][event][i] = e.target.value;
-                        localStorage.setItem('ckt_lineups_v3', JSON.stringify(lineups));
-                        renderLineup(); 
+                        localStorage.setItem('ckt_lineups_v4', JSON.stringify(lineups));
+                        renderLineup();
                     };
-                    slotsDiv.appendChild(select);
+                    card.appendChild(sel);
                 }
-                card.appendChild(slotsDiv);
                 container.appendChild(card);
             });
         }
 
-        // --- 設定與初始化邏輯 ---
-
-        function init() {
-            const yearTrial = document.getElementById('filterYearTrial');
-            const leaderYear = document.getElementById('leaderGroupYear');
-            const stdYear = document.getElementById('stdYear');
-            
-            [yearTrial, leaderYear, stdYear].forEach(select => {
-                select.innerHTML = '';
-                for(let y=2017; y<=2026; y++) {
-                    select.innerHTML += `<option value="${y}">${y} 年</option>`;
-                }
-            });
-
-            renderTeamSettings();
-            renderStudentSettings();
-            showTab('trial');
-        }
-
-        function renderTeamSettings() {
-            const list = document.getElementById('teamList');
-            const teamSelect = document.getElementById('teamSelect');
-            const stdTeam = document.getElementById('stdTeam');
-            list.innerHTML = ''; teamSelect.innerHTML = ''; stdTeam.innerHTML = '';
-
-            teams.forEach(t => {
-                list.innerHTML += `<span class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-sm font-bold flex items-center border border-indigo-100">${t} <button onclick="deleteTeam('${t}')" class="ml-2 text-red-400">×</button></span>`;
-                teamSelect.innerHTML += `<option value="${t}">${t}</option>`;
-                stdTeam.innerHTML += `<option value="${t}">${t}</option>`;
-            });
-        }
-
-        function addTeam() {
-            const val = document.getElementById('newTeamInput').value.trim();
-            if(val && !teams.includes(val)) {
-                teams.push(val);
-                localStorage.setItem('ckt_teams_v3', JSON.stringify(teams));
-                renderTeamSettings();
-                document.getElementById('newTeamInput').value = '';
-            }
-        }
-
-        function deleteTeam(t) {
-            if(confirm('刪除隊伍？')) {
-                teams = teams.filter(item => item !== t);
-                localStorage.setItem('ckt_teams_v3', JSON.stringify(teams));
-                renderTeamSettings();
-            }
-        }
-
+        // --- 4. 管理 ---
         function renderStudentSettings() {
             const tbody = document.getElementById('masterStudentTable');
+            document.getElementById('studentCount').innerText = students.length;
             tbody.innerHTML = '';
-            students.sort((a,b) => b.year - a.year).forEach((s, idx) => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="p-2 font-bold">${s.name}</td>
-                        <td class="p-2 text-slate-500">${s.year}</td>
-                        <td class="p-2 text-slate-500">${s.team}</td>
-                        <td class="p-2 text-center"><button onclick="deleteStd(${idx})" class="text-red-400">×</button></td>
-                    </tr>
-                `;
+            students.sort((a,b) => a.team.localeCompare(b.team)).forEach((s, idx) => {
+                tbody.innerHTML += `<tr><td class="p-2 font-bold">${s.name}</td><td class="p-2 text-xs">${s.team}</td><td class="p-2 text-xs">${s.year}</td><td class="p-2 text-center"><button onclick="deleteStd(${idx})" class="text-red-400">×</button></td></tr>`;
             });
-            localStorage.setItem('ckt_students_v3', JSON.stringify(students));
+            localStorage.setItem('ckt_students_v4', JSON.stringify(students));
         }
 
-        function addStudent() {
-            const name = document.getElementById('stdName').value.trim();
-            const year = parseInt(document.getElementById('stdYear').value);
-            const team = document.getElementById('stdTeam').value;
-            if(name) {
-                students.push({ name, year, team });
-                document.getElementById('stdName').value = '';
+        function deleteStd(idx) { if(confirm('刪除？')) { students.splice(idx,1); renderStudentSettings(); } }
+
+        function addStudentManual() {
+            const name = document.getElementById('newSName').value.trim();
+            const year = parseInt(document.getElementById('newSYear').value);
+            const team = document.getElementById('newSTeam').value;
+            if(name) { students.push({name, year, team}); renderStudentSettings(); document.getElementById('newSName').value=''; }
+        }
+
+        function resetToDefault() {
+            if(confirm('這將恢復原始 38 位學生名單並清空修改，確定嗎？')) {
+                students = JSON.parse(JSON.stringify(DEFAULT_STUDENTS));
                 renderStudentSettings();
+                location.reload();
             }
         }
 
-        function deleteStd(idx) {
-            if(confirm('刪除學生？')) {
-                students.splice(idx, 1);
-                renderStudentSettings();
-            }
-        }
-
-        init();
+        // --- 初始化 ---
+        (function init() {
+            const selects = ['filterTeamTrial', 'leaderTeamSelect', 'teamSelect', 'newSTeam'];
+            selects.forEach(id => {
+                const el = document.getElementById(id);
+                teams.forEach(t => el.innerHTML += `<option value="${t}">${t}</option>`);
+            });
+            const yearEl = document.getElementById('newSYear');
+            for(let y=2017; y<=2026; y++) yearEl.innerHTML += `<option value="${y}">${y}</option>`;
+            
+            showTab('trial');
+        })();
     </script>
 </body>
 </html>
