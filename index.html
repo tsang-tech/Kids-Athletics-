@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CKT兒童競技管理程式 V6.4</title>
+    <title>CKT兒童競技管理程式 V6.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
         .tab-content.active { display: block; }
         .nav-btn { transition: all 0.2s; border-radius: 12px; font-weight: 700; padding: 6px 12px; font-size: 0.85rem; }
         
-        /* 錄入表格：V6.2 固定比例防止拉動 */
+        /* 錄入表格：V6.2 比例 */
         .trial-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
         .trial-table th, .trial-table td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 8px 4px; }
         .col-name { width: 25%; }
@@ -38,7 +38,7 @@
 
     <nav class="bg-white shadow-sm sticky top-0 z-50 no-print border-b border-sky-100">
         <div class="max-w-7xl mx-auto px-2 py-3 flex flex-col items-center">
-            <h1 class="text-lg font-bold text-sky-500 kid-font mb-2">🎈 CKT管理程式 V6.4</h1>
+            <h1 class="text-lg font-bold text-sky-500 kid-font mb-2">🎈 CKT管理程式 V6.5</h1>
             <div class="flex gap-1 overflow-x-auto w-full justify-center">
                 <button onclick="showTab('trial')" class="nav-btn bg-sky-500 text-white">成績錄入</button>
                 <button onclick="showTab('leaderboard')" class="nav-btn bg-emerald-500 text-white">龍虎榜</button>
@@ -51,12 +51,21 @@
     <main class="max-w-7xl mx-auto p-2">
         <div id="trial" class="tab-content active">
             <div class="bg-white rounded-2xl shadow-sm p-3 border border-sky-100">
-                <div class="flex gap-2 mb-4">
-                    <select id="filterTeamTrial" onchange="updateStudentFilterDropdown(); renderTrialEditor();" class="flex-1 rounded-lg border-sky-200 text-sm p-2 bg-sky-50 font-bold outline-none"></select>
-                    <select id="filterStudentTrial" onchange="renderTrialEditor()" class="flex-1 rounded-lg border-sky-200 text-sm p-2 bg-white outline-none">
-                        <option value="">--- 全隊顯示 ---</option>
-                    </select>
+                <div class="flex flex-col gap-2 mb-4">
+                    <div class="flex gap-2">
+                        <select id="filterTeamTrial" onchange="updateStudentFilterDropdown(); renderTrialEditor();" class="flex-1 rounded-lg border-sky-200 text-sm p-2 bg-sky-50 font-bold outline-none ring-1 ring-sky-100"></select>
+                        <select id="filterStudentTrial" onchange="renderTrialEditor()" class="flex-1 rounded-lg border-sky-200 text-sm p-2 bg-white outline-none ring-1 ring-sky-100">
+                            <option value="">--- 全隊顯示 ---</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="exportScores()" class="flex-1 bg-indigo-500 text-white py-2 rounded-lg text-xs font-bold shadow-sm">📤 匯出 Excel</button>
+                        <label class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-lg text-xs font-bold text-center cursor-pointer border border-slate-200">
+                            📥 匯入 Excel <input type="file" class="hidden" onchange="importScores(event)">
+                        </label>
+                    </div>
                 </div>
+                
                 <table class="trial-table">
                     <thead>
                         <tr class="text-sky-700 border-b border-sky-100 text-xs">
@@ -85,7 +94,7 @@
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-xs text-left border-collapse">
-                        <thead><tr class="bg-amber-100 text-amber-800 border-y border-amber-200"><th class="p-2">項目</th><th>名1</th><th>名2</th><th>名3</th><th>名4</th></tr></thead>
+                        <thead><tr class="bg-amber-100 text-amber-800 border-y border-amber-200"><th class="p-2">項目</th><th>名額1</th><th>名額2</th><th>名額3</th><th>名額4</th></tr></thead>
                         <tbody id="lineupTbody" class="divide-y divide-amber-50"></tbody>
                     </table>
                 </div>
@@ -98,8 +107,8 @@
                 <div class="bg-white rounded-2xl shadow-sm p-4 border border-indigo-100">
                     <h3 class="font-bold text-indigo-700 mb-2 text-sm">🚩 隊伍管理</h3>
                     <div class="flex gap-2 mb-2">
-                        <input type="text" id="newTeamInput" placeholder="新隊伍" class="border rounded p-2 text-sm flex-1">
-                        <button onclick="addTeam()" class="bg-indigo-500 text-white px-4 rounded text-sm">新增</button>
+                        <input type="text" id="newTeamInput" placeholder="新隊伍" class="border rounded p-2 text-sm flex-1 outline-none">
+                        <button onclick="addTeam()" class="bg-indigo-500 text-white px-4 rounded text-sm font-bold">新增</button>
                     </div>
                     <div id="teamListContainer" class="flex flex-wrap gap-2"></div>
                 </div>
@@ -107,23 +116,20 @@
                 <div class="bg-white rounded-2xl shadow-sm p-4 border border-sky-100">
                     <h3 class="font-bold text-sky-700 mb-2 text-sm">👤 新增學生</h3>
                     <div class="grid grid-cols-2 gap-2 mb-2">
-                        <input type="text" id="stdAddName" placeholder="姓名" class="border rounded p-2 text-sm">
-                        <input type="number" id="stdAddYear" placeholder="年份" class="border rounded p-2 text-sm">
+                        <input type="text" id="stdAddName" placeholder="姓名" class="border rounded p-2 text-sm outline-none">
+                        <input type="number" id="stdAddYear" placeholder="年份" class="border rounded p-2 text-sm outline-none">
                     </div>
                     <div class="flex gap-2">
-                        <select id="stdAddTeam" class="flex-1 border rounded p-2 text-sm bg-slate-50"></select>
+                        <select id="stdAddTeam" class="flex-1 border rounded p-2 text-sm bg-slate-50 outline-none"></select>
                         <button onclick="addStudent()" class="bg-sky-500 text-white px-6 rounded text-sm font-bold">確認新增</button>
                     </div>
                 </div>
 
                 <div class="bg-white rounded-2xl shadow-sm p-4 border border-slate-200">
-                    <h3 class="font-bold text-slate-700 mb-2 text-sm flex justify-between">
-                        👨‍🎓 學生名單 (<span id="studentCount">0</span>人)
-                        <button onclick="exportScores()" class="text-[10px] text-indigo-500 underline">匯出成績</button>
-                    </h3>
-                    <div class="max-h-60 overflow-y-auto">
+                    <h3 class="font-bold text-slate-700 mb-2 text-sm">👨‍🎓 學生名單 (<span id="studentCount">0</span>人)</h3>
+                    <div class="max-h-80 overflow-y-auto">
                         <table class="w-full text-xs">
-                            <tbody id="masterStudentTable" class="divide-y"></tbody>
+                            <tbody id="masterStudentTable" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
@@ -132,14 +138,14 @@
     </main>
 
     <div id="editModal" class="modal">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl">
-            <h3 class="font-bold mb-4">編輯資料</h3>
-            <input type="text" id="editStdName" class="w-full border rounded p-2 mb-2 text-sm">
-            <input type="number" id="editStdYear" class="w-full border rounded p-2 mb-2 text-sm">
-            <select id="editStdTeam" class="w-full border rounded p-2 mb-4 text-sm"></select>
+        <div class="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl">
+            <h3 class="font-bold mb-4 text-slate-700">編輯學生資料</h3>
+            <input type="text" id="editStdName" class="w-full border rounded-xl p-3 mb-2 text-sm outline-none focus:ring-2 focus:ring-indigo-400">
+            <input type="number" id="editStdYear" class="w-full border rounded-xl p-3 mb-2 text-sm outline-none focus:ring-2 focus:ring-indigo-400">
+            <select id="editStdTeam" class="w-full border rounded-xl p-3 mb-4 text-sm bg-slate-50 outline-none"></select>
             <div class="flex gap-2">
-                <button onclick="closeEditModal()" class="flex-1 py-2 bg-slate-100 rounded">取消</button>
-                <button id="saveEditBtn" class="flex-1 py-2 bg-indigo-500 text-white rounded">儲存</button>
+                <button onclick="closeEditModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">取消</button>
+                <button id="saveEditBtn" class="flex-1 py-3 bg-indigo-500 text-white rounded-xl font-bold">儲存</button>
             </div>
         </div>
     </div>
@@ -147,7 +153,7 @@
     <div id="numpadModal" class="bg-slate-100 border-t-2 border-slate-300 p-3 shadow-2xl no-print">
         <div class="max-w-md mx-auto">
             <div class="flex justify-between items-center mb-2 px-1">
-                <span id="numpadTargetInfo" class="text-xs font-bold text-sky-700">錄入</span>
+                <span id="numpadTargetInfo" class="text-xs font-bold text-sky-700">錄入成績</span>
                 <button onclick="closeNumpad()" class="bg-sky-600 text-white px-8 py-2 rounded-full font-bold text-sm">完成</button>
             </div>
             <div class="grid grid-cols-3 gap-2">
@@ -169,7 +175,6 @@
         };
         const EVENTS = Object.keys(EVENT_CONFIG);
         
-        // 還原 V6.2 完整名單
         const DEFAULT_STUDENTS = [
             {name: "陳希諾", year: 2019, team: "CKT2019A"}, {name: "陳逸朗", year: 2019, team: "CKT2019A"}, {name: "林嘉盛", year: 2019, team: "CKT2019A"}, {name: "陳梓瑩", year: 2019, team: "CKT2019A"}, {name: "徐梓添", year: 2019, team: "CKT2019A"}, {name: "邱俊傑", year: 2019, team: "CKT2019A"},
             {name: "謝瀚陞", year: 2018, team: "CKT2018A"}, {name: "鄔嘉樂", year: 2018, team: "CKT2018A"}, {name: "胡仲希", year: 2018, team: "CKT2018A"}, {name: "梁喬珀", year: 2018, team: "CKT2018A"}, {name: "伍梓灝", year: 2018, team: "CKT2018A"},
@@ -180,7 +185,7 @@
             {name: "劉栢熹", year: 2017, team: "CKT2017B"}, {name: "陳希姸", year: 2017, team: "CKT2017B"}, {name: "麥風", year: 2017, team: "CKT2017B"}, {name: "梁匡毅", year: 2017, team: "CKT2017B"}, {name: "盧鍵霆", year: 2017, team: "CKT2017B"}, {name: "徐梓程", year: 2017, team: "CKT2017B"}
         ];
 
-        // 改回 v5 Key，找回 V6.2 的數據
+        // 核心：使用 v5 金鑰確保數據繼承
         let students = JSON.parse(localStorage.getItem('ckt_students_v5')) || DEFAULT_STUDENTS;
         let teams = JSON.parse(localStorage.getItem('ckt_teams_v5')) || ["CKT2017A", "CKT2017B", "CKT2018A", "CKT2018B", "CKT2018C", "CKT2018D", "CKT2019A"];
         let trialResults = JSON.parse(localStorage.getItem('ckt_trial_v5')) || [];
@@ -203,7 +208,7 @@
             if(tabId === 'settings') { renderTeamSettings(); renderStudentSettings(); }
         }
 
-        // 成績錄入 (V6.2 固定寬度佈局)
+        // --- 成績錄入與編輯 (V6.2 固定桌寬版) ---
         function updateStudentFilterDropdown() {
             const team = document.getElementById('filterTeamTrial').value;
             const select = document.getElementById('filterStudentTrial');
@@ -236,6 +241,7 @@
             currentInput = el;
             document.getElementById('numpadTargetInfo').innerText = `${name} - ${event}`;
             document.getElementById('numpadModal').classList.add('active');
+            el.scrollIntoView({behavior: 'smooth', block: 'center'});
         }
         function closeNumpad() { document.getElementById('numpadModal').classList.remove('active'); currentInput = null; }
         function pressKey(key) {
@@ -252,7 +258,7 @@
             saveData();
         }
 
-        // 龍虎榜
+        // --- 龍虎榜 (含前四強總和) ---
         function renderLeaderboard() {
             const team = document.getElementById('leaderTeamSelect').value;
             const container = document.getElementById('leaderGrid'); container.innerHTML = '';
@@ -264,64 +270,86 @@
                 const sum = list.slice(0, 4).reduce((acc, curr) => acc + curr.score, 0).toFixed(2);
                 let html = `<div class="bg-white rounded-xl shadow-sm border border-emerald-100 overflow-hidden"><div class="bg-emerald-500 p-2 text-white font-bold text-center text-xs">${event}</div><div class="p-2 space-y-1 min-h-[100px]">`;
                 if(list.length === 0) html += `<div class="text-slate-400 text-center py-4 text-xs">無成績</div>`;
-                else list.slice(0, 6).forEach((r, i) => { html += `<div class="flex justify-between text-xs border-b border-emerald-50 py-1"><span>${i+1}. ${r.name}</span><span class="font-bold">${r.score}</span></div>`; });
+                else list.slice(0, 6).forEach((r, i) => { html += `<div class="flex justify-between text-xs border-b border-emerald-50 py-1"><span class="${i<3?'text-orange-600 font-bold':''}">${i+1}. ${r.name}</span><span class="font-bold">${r.score}</span></div>`; });
                 html += `</div><div class="bg-emerald-50 p-2 border-t border-emerald-100 flex justify-between items-center"><span class="text-[10px] font-bold text-emerald-600">前四強總計:</span><span class="text-sm font-black text-emerald-800">${sum}</span></div></div>`;
                 container.innerHTML += html;
             });
         }
 
-        // 管理功能
+        // --- 管理功能 (學生新增、編輯、刪除) ---
         function addStudent() {
             const name = document.getElementById('stdAddName').value.trim();
             const year = document.getElementById('stdAddYear').value;
             const team = document.getElementById('stdAddTeam').value;
-            if(name && year && team) { students.push({name, year, team}); saveData(); renderStudentSettings(); document.getElementById('stdAddName').value=''; }
+            if(name && year && team) { students.push({name, year, team}); saveData(); renderStudentSettings(); document.getElementById('stdAddName').value=''; document.getElementById('stdAddYear').value=''; }
         }
         function openEditModal(idx) {
             const s = students[idx]; document.getElementById('editStdName').value = s.name; document.getElementById('editStdYear').value = s.year;
             const ts = document.getElementById('editStdTeam'); ts.innerHTML = ''; teams.forEach(t => ts.innerHTML += `<option value="${t}" ${t===s.team?'selected':''}>${t}</option>`);
             document.getElementById('saveEditBtn').onclick = () => {
                 const oldName = students[idx].name; const newName = document.getElementById('editStdName').value.trim();
-                if(oldName !== newName) { trialResults.forEach(r => { if(r.name === oldName) r.name = newName; }); }
+                if(oldName !== newName) { 
+                    trialResults.forEach(r => { if(r.name === oldName) r.name = newName; }); 
+                    Object.keys(lineups).forEach(t => { Object.keys(lineups[t]).forEach(ev => { lineups[t][ev] = lineups[t][ev].map(n => n === oldName ? newName : n); }); });
+                }
                 students[idx] = { name: newName, year: document.getElementById('editStdYear').value, team: ts.value };
                 saveData(); closeEditModal(); renderStudentSettings();
             };
             document.getElementById('editModal').classList.add('active');
         }
         function closeEditModal() { document.getElementById('editModal').classList.remove('active'); }
-        function deleteStd(idx) { if(confirm('刪除？')) { students.splice(idx,1); saveData(); renderStudentSettings(); } }
+        function deleteStd(idx) { if(confirm('確定刪除該學生嗎？相關成績也會受影響。')) { students.splice(idx,1); saveData(); renderStudentSettings(); } }
+        
         function renderStudentSettings() {
             const tbody = document.getElementById('masterStudentTable'); document.getElementById('studentCount').innerText = students.length;
             tbody.innerHTML = ''; students.forEach((s, i) => {
-                tbody.innerHTML += `<tr><td class="p-2">${s.name} (${s.year})</td><td class="text-slate-400">${s.team}</td><td class="text-right p-2">
-                    <button onclick="openEditModal(${i})" class="text-indigo-500 mr-2">編輯</button>
+                tbody.innerHTML += `<tr class="border-b border-slate-50"><td class="p-2 font-medium">${s.name} <span class="text-slate-400 text-[10px]">(${s.year})</span></td><td class="text-slate-500 text-xs">${s.team}</td><td class="text-right p-2">
+                    <button onclick="openEditModal(${i})" class="text-indigo-500 mr-3 font-bold">編輯</button>
                     <button onclick="deleteStd(${i})" class="text-red-300">×</button></td></tr>`;
             });
         }
+
         function renderTeamSettings() {
             const cont = document.getElementById('teamListContainer'); cont.innerHTML = '';
-            teams.forEach(t => cont.innerHTML += `<div class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold">${t} <button onclick="deleteTeam('${t}')">×</button></div>`);
+            teams.forEach(t => cont.innerHTML += `<div class="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold flex items-center">${t} <button onclick="deleteTeam('${t}')" class="ml-2 text-red-300">×</button></div>`);
             ['filterTeamTrial','leaderTeamSelect','teamSelect','stdAddTeam'].forEach(id => {
                 const el = document.getElementById(id); const old = el.value; el.innerHTML = '';
                 teams.forEach(t => el.innerHTML += `<option value="${t}">${t}</option>`); if(teams.includes(old)) el.value = old;
             });
         }
         function addTeam() { const v = document.getElementById('newTeamInput').value.trim(); if(v && !teams.includes(v)) { teams.push(v); saveData(); renderTeamSettings(); document.getElementById('newTeamInput').value=''; } }
-        function deleteTeam(t) { if(confirm(`刪除 ${t}?`)) { teams = teams.filter(i=>i!==t); saveData(); renderTeamSettings(); } }
+        function deleteTeam(t) { if(confirm(`確定刪除 ${t} 隊嗎？`)) { teams = teams.filter(i=>i!==t); saveData(); renderTeamSettings(); } }
 
-        // 排陣與匯出 (保持不變)
+        // --- Excel 匯出匯入 (移動至錄入頁使用) ---
+        function exportScores() {
+            const data = trialResults.map(r => { const std = students.find(s => s.name === r.name); return { "隊伍": std?std.team:"-", "姓名": r.name, "項目": r.event, "成績": r.score }; });
+            const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "成績清單"); XLSX.writeFile(wb, `CKT_成績備份_${new Date().toLocaleDateString()}.xlsx`);
+        }
+        function importScores(e) {
+            const file = e.target.files[0]; if(!file) return; const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
+                    const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                    json.forEach(row => { if(row['姓名'] && row['項目']) saveScore(row['姓名'], row['項目'], row['成績'] || 0); });
+                    saveData(); renderTrialEditor(); alert("成績匯入成功！");
+                } catch(err) { alert("匯入失敗，請確保 Excel 格式正確。"); }
+            }; reader.readAsArrayBuffer(file);
+        }
+
+        // --- 排陣表功能 (保持不變) ---
         function renderLineup() {
             const team = document.getElementById('teamSelect').value; const teamStds = students.filter(s => s.team === team);
             const tbody = document.getElementById('lineupTbody'); tbody.innerHTML = '';
             EVENTS.forEach(ev => {
                 const sels = lineups[team]?.[ev] || ["","","",""];
-                let row = `<td class="p-2 font-bold">${ev}</td>`;
+                let row = `<td class="p-2 font-bold text-amber-900">${ev}</td>`;
                 for(let i=0; i<4; i++) {
-                    let sHTML = `<select onchange="updateLineup('${team}','${ev}',${i},this.value)" class="w-full border rounded text-[10px]">`;
+                    let sHTML = `<select onchange="updateLineup('${team}','${ev}',${i},this.value)" class="w-full border-amber-100 rounded text-[10px] p-1 bg-white">`;
                     sHTML += `<option value="">-</option>`; teamStds.forEach(s => sHTML += `<option value="${s.name}" ${sels[i]===s.name?'selected':''}>${s.name}</option>`);
                     row += `<td>${sHTML}</select></td>`;
                 }
-                tbody.innerHTML += `<tr class="border-b">${row}</tr>`;
+                tbody.innerHTML += `<tr class="border-b border-amber-50">${row}</tr>`;
             });
             renderSummary(team);
         }
@@ -330,7 +358,7 @@
             const cont = document.getElementById('studentSummaryList'); cont.innerHTML = '';
             students.filter(s => s.team === t).forEach(s => {
                 let myEvs = EVENTS.filter(ev => lineups[t]?.[ev]?.includes(s.name));
-                if(myEvs.length>0) cont.innerHTML += `<div class="text-[10px] bg-slate-50 p-1 px-2 rounded border border-slate-100"><b>${s.name}:</b> ${myEvs.join('、')}</div>`;
+                if(myEvs.length>0) cont.innerHTML += `<div class="text-[10px] bg-white p-1 px-2 rounded border border-amber-100"><b>${s.name}:</b> ${myEvs.join('、')}</div>`;
             });
         }
         function autoFillLineup() {
@@ -342,10 +370,6 @@
                 lineups[team][ev] = ["","","",""]; list.slice(0,4).forEach((r,i) => lineups[team][ev][i]=r.name);
             });
             saveData(); renderLineup();
-        }
-        function exportScores() {
-            const data = trialResults.map(r => { const std = students.find(s => s.name === r.name); return { "隊伍": std?std.team:"-", "姓名": r.name, "項目": r.event, "成績": r.score }; });
-            const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "成績"); XLSX.writeFile(wb, "CKT_成績.xlsx");
         }
 
         // 初始化
